@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Martin Kristián Felcman – student FIS VŠE, IT v Seyforu, Praha.">
+<title>Martin Kristián Felcman</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: noční overworld. Hero = živý voxelový ostrov, sekce = herní obrazovky (statistiky, inventář, achievementy, chat), dole HUD s hotbarem a XP. Jedno tmavé téma záměrně. */
+:root{
+  --bg:#0f1317;
+  --sky:#16202b;
+  --panel:#1a1f25;
+  --panel-2:#222930;
+  --hi:#3b444e;
+  --lo:#06080a;
+  --fg:#ece8dc;
+  --muted:#99a2a9;
+  --grass:#86c650;
+  --gold:#f3cf4b;
+  --aqua:#6fe3d9;
+  --tip-bg:#140720;
+  --tip-edge:#43208a;
+  --display:"Pixelify Sans", "Courier New", monospace;
+  --body:"Geist", "Segoe UI", system-ui, sans-serif;
+  --mono:"Geist Mono", ui-monospace, Consolas, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);margin:0;padding-inline:16px;padding-block:0 140px}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+img.px{image-rendering:pixelated;display:block}
+
+/* pixel UI primitives */
+.panel{background:var(--panel);box-shadow:inset 3px 3px 0 var(--hi),inset -3px -3px 0 var(--lo),0 0 0 2px var(--lo)}
+.slot{background:var(--panel-2);box-shadow:inset 3px 3px 0 var(--lo),inset -3px -3px 0 var(--hi)}
+.btn{display:inline-flex;align-items:center;gap:.5em;font:500 1.05rem/1 var(--display);letter-spacing:.02em;text-decoration:none;color:var(--fg);padding:.85em 1.3em;background:#4a525b;box-shadow:inset 3px 3px 0 #6f7983,inset -3px -3px 0 #2a3036,0 0 0 2px var(--lo);text-shadow:2px 2px 0 rgba(0,0,0,.45);cursor:pointer;border:0}
+.btn:hover{background:#5a6f3e;box-shadow:inset 3px 3px 0 #86a65a,inset -3px -3px 0 #34441f,0 0 0 2px var(--lo)}
+.btn.primary{background:#4f7a2c;box-shadow:inset 3px 3px 0 #79ab48,inset -3px -3px 0 #2c4518,0 0 0 2px var(--lo)}
+.btn.primary:hover{background:#5d8f34}
+.btn.ghost{font-size:.9rem;padding:.6em 1em}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:22px;font:500 .78rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.top b{color:var(--fg);font-weight:500}
+.top a{text-decoration:none}
+.top a:hover{color:var(--grass)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:48px;align-items:center;padding-block:24px 72px}
+.eyebrow{font:500 .76rem/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--grass);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:10px;height:10px;background:var(--grass);box-shadow:3px 3px 0 #3c6420}
+h1{font:600 clamp(2.6rem,6.2vw,4.9rem)/.98 var(--display);margin:22px 0 22px;letter-spacing:-.01em;text-wrap:balance;text-shadow:.06em .06em 0 #000}
+h1 span{color:var(--muted);font-weight:400}
+.lede{font-size:1.12rem;color:#cfd2cc;max-width:34em;margin:0 0 30px}
+.lede strong{color:var(--fg);font-weight:600}
+.actions{display:flex;flex-wrap:wrap;gap:16px}
+
+.world{position:relative;aspect-ratio:1/1;max-width:100%;background:linear-gradient(180deg,var(--sky) 0%,#121a22 55%,var(--bg) 100%);overflow:hidden}
+.world canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:manipulation}
+.f3{position:absolute;left:14px;top:14px;font:500 .72rem/1.55 var(--mono);color:#e9e9e9;pointer-events:none}
+.f3 div{background:rgba(0,0,0,.42);padding:0 6px;width:fit-content}
+.f3[hidden]{display:none}
+.world-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;font:400 .85rem/1.4 var(--mono);color:var(--muted)}
+
+/* sections */
+section{padding-block:56px;scroll-margin-top:16px}
+.sec-head{display:flex;align-items:end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:28px}
+.sec-head .k{font:500 .76rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h2{font:600 clamp(1.9rem,3.6vw,2.7rem)/1.05 var(--display);margin:10px 0 0;text-wrap:balance;text-shadow:.06em .06em 0 #000}
+.sec-head p{margin:0;color:var(--muted);max-width:30em}
+
+/* stats */
+.stats{padding:10px 26px}
+.stat{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:2px solid #262d34;font-variant-numeric:tabular-nums}
+.stat:last-child{border-bottom:0}
+.stat span{color:var(--muted)}
+.stat b{font:500 1.05rem/1.3 var(--display);text-align:right}
+.stat b.g{color:var(--grass)}
+.note{font:400 .8rem/1.4 var(--mono);color:var(--muted);margin-top:14px}
+
+/* inventory */
+.inv{padding:22px;max-width:620px}
+.inv h3{font:500 1rem/1 var(--display);color:var(--muted);margin:0 0 14px;letter-spacing:.02em}
+.grid9{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
+.grid9 .slot{aspect-ratio:1/1;max-width:100%;display:grid;place-items:center;position:relative;border:0;padding:0;color:inherit}
+.grid9 button.slot{cursor:pointer}
+.grid9 button.slot:hover,.grid9 button.slot.on{background:#39424b}
+.grid9 .slot img{width:62%;height:62%}
+.count{position:absolute;right:4px;bottom:1px;font:600 .82rem/1 var(--display);text-shadow:2px 2px 0 #000}
+.inv-layout{display:grid;grid-template-columns:minmax(0,620px) minmax(0,1fr);gap:40px;align-items:start}
+.inv-aside{color:var(--muted);max-width:28em}
+.inv-aside dl{margin:0;display:grid;gap:14px}
+.inv-aside dt{font:500 .75rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg);margin-bottom:4px}
+.inv-aside dd{margin:0}
+
+/* tooltip */
+.tip{position:fixed;z-index:30;pointer-events:none;max-width:280px;background:var(--tip-bg);padding:8px 10px;box-shadow:inset 0 0 0 2px var(--tip-edge),0 0 0 2px #0a0310;font:400 .95rem/1.35 var(--display)}
+.tip .n{color:var(--aqua)}
+.tip .l{color:#a9a4b8}
+.tip .id{color:#5e5a6b;font:400 .72rem/1.6 var(--mono)}
+
+/* advancements */
+.adv{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.ach{display:grid;grid-template-columns:56px minmax(0,1fr);gap:16px;align-items:start;padding:18px}
+.ach .slot{width:56px;height:56px;display:grid;place-items:center}
+.ach .slot img{width:32px;height:32px}
+.ach h3{font:500 1.15rem/1.2 var(--display);margin:2px 0 6px}
+.ach p{margin:0;color:var(--muted);font-size:.95rem}
+.ach .st{font:500 .72rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;color:var(--gold)}
+.ach.locked .st{color:var(--muted)}
+.ach.locked img{filter:grayscale(1) brightness(.35)}
+.ach.locked h3{color:var(--muted)}
+.ach.pop{animation:pop .6s steps(4)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+
+/* chat */
+.chat{padding:22px;max-width:760px}
+.log{display:grid;gap:4px;margin-bottom:18px}
+.line{background:rgba(0,0,0,.45);padding:4px 10px;font:400 1.05rem/1.45 var(--display);text-shadow:2px 2px 0 #000;width:fit-content;max-width:100%}
+.line .who{color:var(--grass)}
+.line .sys{color:var(--gold)}
+.line a{color:var(--aqua)}
+.cmd{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cmd code{flex:1 1 260px;min-width:0;background:#000;color:#e6e6e6;padding:12px 14px;font:400 1rem/1.2 var(--display);box-shadow:0 0 0 2px #50565c;overflow-wrap:anywhere}
+.cmd code::after{content:"_";animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:2px solid #1f252b;margin-top:40px}
+
+/* HUD */
+.hud{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:20;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;gap:6px;width:max-content;max-width:calc(100vw - 32px)}
+.hs-name{font:500 1rem/1 var(--display);text-shadow:2px 2px 0 #000;opacity:0;transition:opacity .4s;height:1em}
+.hs-name.show{opacity:1}
+.xp{position:relative;width:100%}
+.xp-bar{height:8px;background:#0b0d0b;box-shadow:0 0 0 2px #000}
+.xp-bar i{display:block;height:100%;width:0;background:linear-gradient(#c8f56a 0 40%,#7fc33a 40%)}
+.xp-level{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);font:700 1.05rem/1 var(--display);color:#9cf04a;text-shadow:2px 0 0 #000,-2px 0 0 #000,0 2px 0 #000,0 -2px 0 #000}
+.hotbar{display:flex;background:rgba(10,12,14,.82);box-shadow:0 0 0 3px #000,inset 0 0 0 2px #4b5259;padding:3px;gap:0}
+.hs{width:50px;height:50px;display:grid;place-items:center;position:relative;text-decoration:none;box-shadow:inset -2px 0 0 #2b3137}
+.hs:last-child{box-shadow:none}
+.hs img{width:30px;height:30px}
+.hs.on::after{content:"";position:absolute;inset:-4px;box-shadow:inset 0 0 0 3px #f1f1f1,0 0 0 2px #000;pointer-events:none}
+.hs kbd{position:absolute;left:4px;top:2px;font:400 .62rem/1 var(--mono);color:#8c949b}
+
+/* toast */
+.toasts{position:fixed;right:16px;top:calc(16px + env(safe-area-inset-top,0px));z-index:40;display:grid;gap:10px}
+.toast{display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:center;width:min(320px,calc(100vw - 32px));padding:12px 14px;background:#202326;box-shadow:inset 0 0 0 2px #555b61,0 0 0 2px #000;animation:tin .5s steps(5)}
+.toast img{width:32px;height:32px}
+.toast b{display:block;font:500 .92rem/1.2 var(--display);color:var(--gold)}
+.toast span{font:400 1rem/1.25 var(--display)}
+.toast.out{animation:tout .5s steps(5) forwards}
+@keyframes tin{from{transform:translateX(110%)}}
+@keyframes tout{to{transform:translateX(110%)}}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:minmax(0,1fr);gap:36px;padding-block:8px 48px}
+  .inv-layout{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:480px){
+  .hs{width:44px;height:44px}
+  .hs img{width:26px;height:26px}
+  .stats{padding:6px 16px}
+  .inv,.chat{padding:14px}
+  .top .hide-s{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .toast,.toast.out,.ach.pop{animation:none}
+  .cmd code::after{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <span><b>mkfelcman</b><span class="hide-s"> · overworld</span></span>
+    <a href="https://www.instagram.com/mkfelcman/" target="_blank" rel="noopener">Instagram ↗</a>
+  </header>
+
+  <section class="hero" id="svet" aria-label="Úvod">
+    <div>
+      <div class="eyebrow">Singleplayer · Praha</div>
+      <h1>Martin Kristián <span>Felcman</span></h1>
+      <p class="lede">Studuju <strong>Fakultu informatiky a statistiky na VŠE</strong> a pracuju v IT ve <strong>Seyforu</strong>. Ve volném čase jezdím s <strong>4FIS clubem</strong>, autem i letadlem.</p>
+      <div class="actions">
+        <a class="btn primary" href="#inventar">Otevřít inventář</a>
+        <a class="btn" href="https://www.instagram.com/mkfelcman/" target="_blank" rel="noopener">Instagram ↗</a>
+      </div>
+    </div>
+    <div>
+      <div class="world panel">
+        <canvas id="cv" role="img" aria-label="Voxelový ostrov se stromem. Kliknutím lze těžit bloky."></canvas>
+        <div class="f3" id="f3">
+          <div>mkfelcman.cz · F3</div>
+          <div>XYZ: 50.084 / 235 / 14.441</div>
+          <div>Biome: praha:zizkov</div>
+          <div>Facing: VŠE (sever)</div>
+          <div>Vytěženo: <span id="f3mined">0</span> bloků</div>
+        </div>
+      </div>
+      <div class="world-foot">
+        <span>Klikni na blok a vytěž ho. Někde je diamant.</span>
+        <button class="btn ghost" id="reset" type="button">Obnovit ostrov</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="statistiky">
+    <div class="sec-head">
+      <div><div class="k">Menu → Statistiky</div><h2>Statistiky</h2></div>
+      <p>Obecné statistiky hráče. Některé se mění, když si na ostrově zahraješ.</p>
+    </div>
+    <div class="stats panel">
+      <div class="stat"><span>Fakulta</span><b>FIS VŠE</b></div>
+      <div class="stat"><span>Práce</span><b>Seyfor</b></div>
+      <div class="stat"><span>Klub</span><b>4FIS club</b></div>
+      <div class="stat"><span>Domovský svět</span><b>Praha</b></div>
+      <div class="stat"><span>Prozkoumané země</span><b>Česko, Itálie</b></div>
+      <div class="stat"><span>Sledující na Instagramu</span><b>1 197</b></div>
+      <div class="stat"><span>Sledované účty</span><b>906</b></div>
+      <div class="stat"><span>Vytěžené bloky (tahle návštěva)</span><b class="g" id="mined">0</b></div>
+    </div>
+    <div class="note">Zdroj: veřejný profil @mkfelcman, stav k 2. 10. 2026.</div>
+  </section>
+
+  <section id="inventar">
+    <div class="sec-head">
+      <div><div class="k">Klávesa E</div><h2>Inventář</h2></div>
+      <p>Co mám u sebe. Najeď na předmět, nebo na něj klepni.</p>
+    </div>
+    <div class="inv-layout">
+      <div class="inv panel">
+        <h3>Inventář</h3>
+        <div class="grid9" id="inv"></div>
+      </div>
+      <div class="inv-aside">
+        <dl>
+          <dt>Hlavní quest</dt><dd>Dostudovat informatiku na VŠE, bez speedrunu.</dd>
+          <dt>Gilda</dt><dd>4FIS club, studentská parta z FIS.</dd>
+          <dt>Spawn point</dt><dd>Praha.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section id="achievementy">
+    <div class="sec-head">
+      <div><div class="k">Menu → Achievementy</div><h2>Achievementy</h2></div>
+      <p>Dva poslední se odemknou přímo tady, na ostrově nahoře.</p>
+    </div>
+    <div class="adv" id="adv"></div>
+  </section>
+
+  <section id="kontakt">
+    <div class="sec-head">
+      <div><div class="k">Klávesa T</div><h2>Napiš mi</h2></div>
+      <p>Nejrychleji odpovídám na Instagramu.</p>
+    </div>
+    <div class="chat panel">
+      <div class="log">
+        <div class="line"><span class="sys">mkfelcman se připojil do hry</span></div>
+        <div class="line"><span class="who">&lt;mkfelcman&gt;</span> Ahoj! Nejrychleji mě zastihneš na Instagramu.</div>
+        <div class="line"><span class="who">&lt;mkfelcman&gt;</span> Škola, IT, výjezdy nebo cokoliv dalšího, klidně napiš.</div>
+        <div class="line"><span class="sys">[Server]</span> Profil: <a href="https://www.instagram.com/mkfelcman/" target="_blank" rel="noopener">instagram.com/mkfelcman</a></div>
+      </div>
+      <div class="cmd">
+        <code>/msg @mkfelcman</code>
+        <a class="btn primary" href="https://www.instagram.com/mkfelcman/" target="_blank" rel="noopener">Otevřít Instagram ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Seed: mkfelcman · statický web</span>
+    <span>Hostováno na Cloudflare Pages · 0 Kč měsíčně</span>
+  </footer>
+</div>
+
+<nav class="hud" aria-label="Sekce stránky">
+  <div class="hs-name" id="hsname" aria-hidden="true"></div>
+  <div class="xp" aria-hidden="true"><span class="xp-level" id="lvl">0</span><div class="xp-bar"><i id="xpfill"></i></div></div>
+  <div class="hotbar" id="hotbar">
+    <a class="hs on" href="#svet" data-name="Svět"><kbd>1</kbd><img class="px" data-sprite="grass" alt=""><span class="sr">Svět</span></a>
+    <a class="hs" href="#statistiky" data-name="Statistiky"><kbd>2</kbd><img class="px" data-sprite="orb" alt=""><span class="sr">Statistiky</span></a>
+    <a class="hs" href="#inventar" data-name="Inventář"><kbd>3</kbd><img class="px" data-sprite="book" alt=""><span class="sr">Inventář</span></a>
+    <a class="hs" href="#achievementy" data-name="Achievementy"><kbd>4</kbd><img class="px" data-sprite="diamond" alt=""><span class="sr">Achievementy</span></a>
+    <a class="hs" href="#kontakt" data-name="Napiš mi"><kbd>5</kbd><img class="px" data-sprite="chat" alt=""><span class="sr">Kontakt</span></a>
+  </div>
+</nav>
+
+<div class="tip" id="tip" hidden></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- pixel sprites (8x8) ---------- */
+  const SP = {
+    grass:{pal:{g:'#6aa83e',G:'#4f8a2c',d:'#7a5534',D:'#5e4027'},rows:['gGgggGgg','ggGggggG','dgdgGdgd','ddDdddDd','dDdddddd','ddddDddd','dddDdddD','dDdddddd']},
+    orb:{pal:{y:'#5c9a1e',Y:'#a6e34a',w:'#efffc4'},rows:['..yyyy..','.yYYYYy.','yYwYYYYy','yYwYYYYy','yYYYYYYy','yYYYYYYy','.yYYYYy.','..yyyy..']},
+    book:{pal:{b:'#3b2414',B:'#8a3b25',w:'#e9d9a8',p:'#d8c99a'},rows:['.bbbbbb.','bBBBBBpb','bBwwwBpb','bBBBBBpb','bBwwBBpb','bBBBBBpb','bbbbbbpb','.pppppp.']},
+    diamond:{pal:{c:'#3fd0c5',C:'#9ff3ec',w:'#ffffff',D:'#1f8f88'},rows:['...cc...','..cCcc..','.cCwccc.','cCwcccDc','.cccccD.','..ccDD..','...cD...','........']},
+    chat:{pal:{w:'#e8e8e8',k:'#3a3f44',s:'#9aa0a6'},rows:['.wwwwww.','wwwwwwww','wkwkwkww','wwwwwwww','.wwwwws.','..ws....','.ws.....','........']},
+    monitor:{pal:{k:'#2a2e33',K:'#41474e',c:'#10302c',g:'#6fe3a0'},rows:['kkkkkkkk','kccccccK','kcgcccck','kccgccck','kcgcgggk','kcccccck','kkkkkkkk','..kKKk..']},
+    beer:{pal:{w:'#f4f1e6',y:'#d99a1e',Y:'#f2c64b',h:'#a9b0b6',g:'#c9d2d6'},rows:['.wwwww..','.wwwwwh.','.yyyyyhh','.yYyyy.h','.yyyYy.h','.yyyyyhh','.yYyyy..','.ggggg..']},
+    map:{pal:{p:'#d8c99a',g:'#6aa83e',b:'#3f76c9',r:'#d23a2a'},rows:['pppppppp','pggbbggp','pgrgbbgp','pggbgggp','pgbbgggp','pbbggggp','pggggbbp','pppppppp']},
+    log:{pal:{l:'#6b5133',L:'#4e3a22',t:'#9c7c4f'},rows:['ttttttt.','lLllLllL','lLllLllL','llLlllLl','lLllLllL','llLlllLl','lLllLllL','llLlllLl']},
+    house:{pal:{r:'#8a3b25',s:'#9a9d9f',w:'#e7d9a8',d:'#5a3a22',k:'#5c6063'},rows:['...rr...','..rrrr..','.rrrrrr.','rrrrrrrr','.ssssss.','.swsdss.','.sssdss.','.kkkkkk.']}
+  };
+  const spriteCache = {};
+  const sprite = k => {
+    if (spriteCache[k]) return spriteCache[k];
+    const s = SP[k], c = document.createElement('canvas'); c.width = c.height = 8;
+    const g = c.getContext('2d');
+    s.rows.forEach((r,y) => [...r].forEach((ch,x) => { const col = s.pal[ch]; if (col){ g.fillStyle = col; g.fillRect(x,y,1,1); } }));
+    return spriteCache[k] = c.toDataURL();
+  };
+  const paintSprites = root => root.querySelectorAll('img[data-sprite]').forEach(i => i.src = sprite(i.dataset.sprite));
+  paintSprites(document);
+
+  /* ---------- inventory ---------- */
+  const ITEMS = [
+    {s:'book', n:'Fakulta informatiky a statistiky', l:['Vysoká škola ekonomická v Praze','Aktuální quest: studium'], id:'vse:fis'},
+    {s:'monitor', n:'Seyfor', l:['Software a IT služby','Role: IT'], id:'seyfor:workstation'},
+    {s:'beer', n:'4FIS club', l:['Studentská parta z FIS','Výjezdy autem i letadlem'], id:'fis:4fis_club', c:16},
+    {s:'map', n:'Mapa: Firenze', l:['Toskánsko, Itálie','Stav: prozkoumáno'], id:'map:firenze'},
+    {s:'house', n:'Spawn point', l:['Praha, Česko'], id:'overworld:praha'},
+    {s:'orb', n:'Komunita', l:['1 197 sledujících','906 sledovaných'], id:'instagram:mkfelcman'}
+  ];
+  const inv = document.getElementById('inv');
+  for (let i = 0; i < 27; i++) {
+    const it = ITEMS[i];
+    if (it) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'slot'; b.dataset.i = i;
+      b.setAttribute('aria-label', it.n + '. ' + it.l.join('. '));
+      b.innerHTML = `<img class="px" data-sprite="${it.s}" alt="">` + (it.c ? `<span class="count">${it.c}</span>` : '');
+      inv.appendChild(b);
+    } else {
+      const d = document.createElement('div'); d.className = 'slot'; inv.appendChild(d);
+    }
+  }
+  paintSprites(inv);
+
+  const tip = document.getElementById('tip');
+  const showTip = (it, x, y) => {
+    tip.innerHTML = `<div class="n">${it.n}</div>` + it.l.map(t => `<div class="l">${t}</div>`).join('') + `<div class="id">${it.id}</div>`;
+    tip.hidden = false; placeTip(x, y);
+  };
+  const placeTip = (x, y) => {
+    const r = tip.getBoundingClientRect();
+    let left = x + 16, top = y - r.height - 10;
+    if (left + r.width > innerWidth - 8) left = x - r.width - 16;
+    if (left < 8) left = 8;
+    if (top < 8) top = y + 20;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  };
+  let pinned = null;
+  inv.addEventListener('pointerover', e => { const b = e.target.closest('button.slot'); if (b && e.pointerType === 'mouse') showTip(ITEMS[b.dataset.i], e.clientX, e.clientY); });
+  inv.addEventListener('pointermove', e => { if (!tip.hidden && e.pointerType === 'mouse') placeTip(e.clientX, e.clientY); });
+  inv.addEventListener('pointerout', e => { if (e.pointerType === 'mouse' && !e.relatedTarget?.closest?.('button.slot')) tip.hidden = true; });
+  inv.addEventListener('click', e => {
+    const b = e.target.closest('button.slot'); if (!b) return;
+    inv.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+    if (pinned === b) { pinned = null; tip.hidden = true; return; }
+    pinned = b; b.classList.add('on');
+    const r = b.getBoundingClientRect(); showTip(ITEMS[b.dataset.i], r.left + r.width/2, r.top);
+  });
+  inv.addEventListener('focusin', e => { const b = e.target.closest('button.slot'); if (b){ const r = b.getBoundingClientRect(); showTip(ITEMS[b.dataset.i], r.right - 8, r.top); } });
+  inv.addEventListener('focusout', () => { if (!pinned) tip.hidden = true; });
+  addEventListener('scroll', () => { if (!tip.hidden) { tip.hidden = true; pinned = null; inv.querySelectorAll('.on').forEach(x => x.classList.remove('on')); } }, {passive:true});
+
+  /* ---------- advancements ---------- */
+  const ADV = [
+    {id:'gympl', s:'book', t:'Nejtěžší gympl', d:'Přijat na Fakultu informatiky a statistiky VŠE. Adresa <a href="https://www.nejtezsigympl.cz" target="_blank" rel="noopener">nejtezsigympl.cz</a> vede přímo na vse.cz.', on:true},
+    {id:'hello', s:'monitor', t:'Hello, world', d:'Nastoupil do IT ve Seyforu.', on:true},
+    {id:'cheers', s:'beer', t:'Na zdraví', d:'Člen 4FIS clubu.', on:true},
+    {id:'ciao', s:'map', t:'Ciao, Firenze', d:'Prozkoumal Florencii.', on:true},
+    {id:'mp', s:'orb', t:'Multiplayer', d:'Tenhle svět sleduje 1 197 lidí.', on:true},
+    {id:'wood', s:'log', t:'Kde je dřevo?', d:'Vytěž kmen stromu na ostrově nahoře.', on:false},
+    {id:'dia', s:'diamond', t:'Diamanty!', d:'Najdi diamant schovaný v ostrově.', on:false}
+  ];
+  const advEl = document.getElementById('adv');
+  advEl.innerHTML = ADV.map(a => `<article class="ach panel${a.on ? '' : ' locked'}" id="adv-${a.id}">
+      <div class="slot"><img class="px" data-sprite="${a.s}" alt=""></div>
+      <div><div class="st">${a.on ? 'Získáno' : 'Zamčeno'}</div><h3>${a.t}</h3><p>${a.d}</p></div>
+    </article>`).join('');
+  paintSprites(advEl);
+
+  const toasts = document.getElementById('toasts');
+  const toast = (s, title) => {
+    const t = document.createElement('div'); t.className = 'toast';
+    t.innerHTML = `<img class="px" src="${sprite(s)}" alt=""><div><b>Achievement získán!</b><span>${title}</span></div>`;
+    toasts.appendChild(t);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), reduce ? 0 : 520); }, 3800);
+  };
+  const unlock = id => {
+    const a = ADV.find(x => x.id === id); if (!a || a.on) return;
+    a.on = true;
+    const el = document.getElementById('adv-' + id);
+    el.classList.remove('locked'); el.classList.add('pop');
+    el.querySelector('.st').textContent = 'Získáno';
+    toast(a.s, a.t);
+  };
+
+  /* ---------- HUD: hotbar + XP ---------- */
+  const slots = [...document.querySelectorAll('.hs')];
+  const nameEl = document.getElementById('hsname');
+  let nameT;
+  const setActive = (i, announce) => {
+    slots.forEach((s, j) => s.classList.toggle('on', j === i));
+    if (announce) {
+      nameEl.textContent = slots[i].dataset.name; nameEl.classList.add('show');
+      clearTimeout(nameT); nameT = setTimeout(() => nameEl.classList.remove('show'), 1400);
+    }
+  };
+  let current = 0;
+  const secs = slots.map(s => document.querySelector(s.getAttribute('href')));
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { const i = secs.indexOf(e.target); if (i !== current) { current = i; setActive(i, true); } } });
+  }, {rootMargin:'-45% 0px -50% 0px'});
+  secs.forEach(s => io.observe(s));
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input,textarea')) return;
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= slots.length) { secs[n-1].scrollIntoView({behavior: reduce ? 'auto' : 'smooth'}); }
+    if (e.key === 'F3') { e.preventDefault(); const f = document.getElementById('f3'); f.hidden = !f.hidden; }
+  });
+  const xpfill = document.getElementById('xpfill');
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    xpfill.style.width = (max > 0 ? Math.min(1, scrollY / max) * 100 : 0) + '%';
+  };
+  addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  /* ---------- voxel island ---------- */
+  let seed = 1197;
+  const rng = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const tex = fn => { const c = document.createElement('canvas'); c.width = c.height = 16; const g = c.getContext('2d');
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { g.fillStyle = fn(x, y); g.fillRect(x, y, 1, 1); } return c; };
+  const P = {
+    grass:['#5d9a35','#69a93d','#538a2f','#76b447'], dirt:['#79553a','#6a4a30','#86603f','#5d4029'],
+    stone:['#7b7e80','#707375','#888b8d','#666a6c'], logS:['#6b5133','#5b4429','#7b5f3b'], logT:['#a07f50','#8a6c43'],
+    leaf:['#3d7a27','#346b21','#4a8a30','#2a5a1a'], dia:['#5fe0d6','#a8f5ef','#2bb5ac']
+  };
+  const ore = new Set();
+  [[4,4],[11,5],[6,11],[12,12]].forEach(([cx,cy]) => { for (let dx=-1; dx<=1; dx++) for (let dy=-1; dy<=1; dy++) if (!dx || !dy || rng() < .4) ore.add((cx+dx)+','+(cy+dy)); });
+  const TX = {
+    grassTop: tex(() => pick(P.grass)),
+    grassSide: tex((x, y) => (y < 3 || (y === 3 && rng() < .5)) ? pick(P.grass) : pick(P.dirt)),
+    dirt: tex(() => pick(P.dirt)),
+    stone: tex(() => pick(P.stone)),
+    logSide: tex(x => x % 4 === 1 ? P.logS[1] : pick(P.logS)),
+    logTop: tex((x, y) => { const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5)); return d > 6.5 ? P.logS[0] : (Math.floor(d) % 2 ? P.logT[0] : P.logT[1]); }),
+    leaves: tex(() => pick(P.leaf)),
+    ore: tex((x, y) => ore.has(x + ',' + y) ? pick(P.dia) : pick(P.stone))
+  };
+  const B = {
+    grass:{top:'grassTop', side:'grassSide', c:P.grass}, dirt:{top:'dirt', side:'dirt', c:P.dirt},
+    stone:{top:'stone', side:'stone', c:P.stone}, log:{top:'logTop', side:'logSide', c:P.logS},
+    leaves:{top:'leaves', side:'leaves', c:P.leaf}, ore:{top:'ore', side:'ore', c:P.dia.concat(P.stone)}
+  };
+
+  const N = 7;
+  let W;
+  const build = () => {
+    W = new Map();
+    const put = (x, y, z, t) => W.set(x + ',' + y + ',' + z, {x, y, z, t});
+    const hills = new Set(['0,1','1,0','1,1','1,2','2,1']);
+    for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) {
+      if ((x === 0 && y === 6) || (x === 6 && y === 0)) continue;
+      const h = hills.has(x + ',' + y) ? 3 : 2;
+      for (let z = 0; z <= h; z++) put(x, y, z, z === h ? 'grass' : z >= h - 1 ? 'dirt' : 'stone');
+      const edge = x === 0 || y === 0 || x === N - 1 || y === N - 1;
+      if (!edge) put(x, y, -1, 'stone');
+      if (x >= 2 && x <= 4 && y >= 2 && y <= 4) put(x, y, -2, 'stone');
+    }
+    put(3, 3, -3, 'stone');
+    put(6, 3, 0, 'ore');
+    const tx = 4, ty = 2;
+    for (let z = 3; z <= 5; z++) put(tx, ty, z, 'log');
+    for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) {
+      const m = Math.abs(dx) + Math.abs(dy);
+      if ((dx || dy) && m <= 3 && !(Math.abs(dx) === 2 && Math.abs(dy) === 2)) {
+        const x = tx + dx, y = ty + dy; if (x >= 0 && y >= 0 && x < N && y < N) put(x, y, 5, 'leaves');
+      }
+      if (m <= 1) put(tx + dx, ty + dy, 6, 'leaves');
+    }
+    put(tx, ty, 7, 'leaves');
+  };
+  build();
+
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  let cw = 0, ch = 0, dpr = 1, A = 20, ox = 0, oy = 0;
+  // bounds from the untouched world, so mining never rescales the view
+  const bounds = (() => { let a = 1e9, b = -1e9, c = 1e9, d = -1e9;
+    W.forEach(k => { const sx = k.x - k.y, sy = (k.x + k.y) / 2 - k.z; a = Math.min(a, sx - 1); b = Math.max(b, sx + 1); c = Math.min(c, sy); d = Math.max(d, sy + 2); });
+    return {a, b, c, d}; })();
+  const resize = () => {
+    const r = cv.getBoundingClientRect(); cw = r.width; ch = r.height; dpr = Math.min(2, devicePixelRatio || 1);
+    cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+    A = Math.min(cw * .78 / (bounds.b - bounds.a), ch * .74 / (bounds.d - bounds.c));
+    ox = cw / 2 - A * (bounds.a + bounds.b) / 2; oy = ch * .53 - A * (bounds.c + bounds.d) / 2;
+    ctx.imageSmoothingEnabled = false;
+  };
+  new ResizeObserver(resize).observe(cv); resize();
+
+  const stars = Array.from({length:46}, () => ({x:rng(), y:rng() * .5, s:rng() < .2 ? 2 : 1, p:rng() * 6.28}));
+  const clouds = Array.from({length:4}, (_, i) => ({x:rng(), y:.08 + i * .07 + rng() * .04, w:.14 + rng() * .14}));
+  let parts = [], hover = null, bob = 0, mined = 0;
+
+  const proj = k => [ox + (k.x - k.y) * A, oy + bob + (k.x + k.y) * A / 2 - k.z * A];
+  const face = (img, a, b, c, d, e, f, shade) => {
+    ctx.setTransform(dpr * a, dpr * b, dpr * c, dpr * d, dpr * e, dpr * f);
+    ctx.drawImage(img, -.04, -.04, 16.08, 16.08);
+    if (shade) { ctx.fillStyle = `rgba(6,9,14,${shade})`; ctx.fillRect(-.04, -.04, 16.08, 16.08); }
+  };
+  const sorted = () => [...W.values()].sort((p, q) => (p.x + p.y + p.z) - (q.x + q.y + q.z) || p.z - q.z);
+  const hexPts = (sx, sy) => [[sx, sy], [sx + A, sy + A / 2], [sx + A, sy + 1.5 * A], [sx, sy + 2 * A], [sx - A, sy + 1.5 * A], [sx - A, sy + A / 2]];
+  const inHex = (pts, px, py) => { for (let i = 0; i < 6; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % 6]; if ((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1) < 0) return false; } return true; };
+  const hit = (px, py) => { const s = sorted(); for (let i = s.length - 1; i >= 0; i--) { const [sx, sy] = proj(s[i]); if (inHex(hexPts(sx, sy), px, py)) return s[i]; } return null; };
+
+  const draw = t => {
+    bob = reduce ? 0 : Math.sin(t / 1400) * A * .12;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cw, ch);
+    // stars, moon, clouds
+    stars.forEach(s => { ctx.fillStyle = `rgba(230,236,255,${reduce ? .6 : .35 + .35 * Math.sin(t / 900 + s.p)})`; ctx.fillRect(Math.round(s.x * cw), Math.round(s.y * ch), s.s, s.s); });
+    const m = Math.round(A * .9); ctx.fillStyle = '#e9ecdf'; ctx.fillRect(Math.round(cw * .78), Math.round(ch * .1), m, m);
+    ctx.fillStyle = '#c9cdbf'; ctx.fillRect(Math.round(cw * .78 + m * .2), Math.round(ch * .1 + m * .25), Math.round(m * .25), Math.round(m * .25));
+    ctx.fillStyle = 'rgba(220,230,240,.07)';
+    clouds.forEach(c => { const x = ((c.x + (reduce ? 0 : t / 400000)) % 1.3 - .15) * cw; const u = Math.round(A * .35); ctx.fillRect(Math.round(x), Math.round(c.y * ch), Math.round(c.w * cw), u * 2); ctx.fillRect(Math.round(x + c.w * cw * .2), Math.round(c.y * ch - u), Math.round(c.w * cw * .5), u); });
+    // blocks
+    const k = A / 16;
+    sorted().forEach(bk => {
+      const d = B[bk.t], [sx, sy] = proj(bk);
+      face(TX[d.top], k, k / 2, -k, k / 2, sx, sy, 0);
+      face(TX[d.side], k, k / 2, 0, k, sx - A, sy + A / 2, .3);
+      face(TX[d.side], k, -k / 2, 0, k, sx, sy + A, .5);
+    });
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (hover && W.has(hover.x + ',' + hover.y + ',' + hover.z)) {
+      const [sx, sy] = proj(hover), p = hexPts(sx, sy);
+      ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.moveTo(sx - A, sy + A / 2); ctx.lineTo(sx, sy + A); ctx.lineTo(sx + A, sy + A / 2); ctx.moveTo(sx, sy + A); ctx.lineTo(sx, sy + 2 * A);
+      ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.lineWidth = Math.max(1.5, A / 14); ctx.stroke();
+    }
+    parts = parts.filter(p => p.life > 0);
+    parts.forEach(p => { p.vy += .25; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.c; const s = Math.max(2, A / 7); ctx.fillRect(Math.round(p.x), Math.round(p.y), s, s); });
+    requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+
+  const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointermove', e => { hover = hit(...pos(e)); });
+  cv.addEventListener('pointerleave', () => { hover = null; });
+  const minedEls = [document.getElementById('mined'), document.getElementById('f3mined'), document.getElementById('lvl')];
+  cv.addEventListener('click', e => {
+    const bk = hit(...pos(e)); if (!bk) return;
+    const [sx, sy] = proj(bk);
+    for (let i = 0; i < 16; i++) parts.push({x:sx + (rng() - .5) * A, y:sy + A * (.4 + rng()), vx:(rng() - .5) * 4, vy:-rng() * 4 - 1, life:24 + rng() * 14 | 0, c:pick(B[bk.t].c)});
+    W.delete(bk.x + ',' + bk.y + ',' + bk.z);
+    hover = hit(...pos(e));
+    mined++; minedEls.forEach(el => el.textContent = mined);
+    if (bk.t === 'log') unlock('wood');
+    if (bk.t === 'ore') unlock('dia');
+  });
+  document.getElementById('reset').addEventListener('click', () => { build(); parts = []; });
+})();
+</script>
+</body>
+</html>
