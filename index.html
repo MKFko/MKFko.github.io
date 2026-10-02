@@ -30,6 +30,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);margin:0;padding-inline:16px;padding-block:0 140px}
@@ -161,13 +162,43 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
 @keyframes tin{from{transform:translateX(110%)}}
 @keyframes tout{to{transform:translateX(110%)}}
 
+/* avatar */
+.player{display:flex;align-items:center;gap:16px}
+.skin{width:76px;height:76px;flex:none;padding:4px;background:#3a2a1a;box-shadow:inset 3px 3px 0 #6e5232,inset -3px -3px 0 #22180e,0 0 0 2px var(--lo)}
+.skin img{width:100%;height:100%;object-fit:cover;display:block;image-rendering:auto}
+.player small{display:block;font:400 .8rem/1.4 var(--mono);color:var(--muted);margin-top:8px}
+
+/* maps (photo galleries in item frames) */
+.maps{display:grid;gap:48px}
+.map-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.map-head .slot{width:48px;height:48px;display:grid;place-items:center;flex:none}
+.map-head .slot img{width:28px;height:28px}
+.map-head h3{font:500 1.35rem/1.1 var(--display);margin:0}
+.map-head p{margin:2px 0 0;color:var(--muted);font:400 .82rem/1.4 var(--mono)}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:18px}
+.frame{display:block;width:100%;border:0;padding:8px;cursor:zoom-in;color:inherit;text-align:left;background:#6b4a2c;box-shadow:inset 3px 3px 0 #8f6a40,inset -3px -3px 0 #3f2a17,0 0 0 2px var(--lo);transition:transform .15s steps(2)}
+.frame:hover{transform:translateY(-3px)}
+.frame img{display:block;width:100%;aspect-ratio:4/5;max-width:100%;object-fit:cover;background:#2a1d10;box-shadow:0 0 0 2px #2a1d10}
+.frame span{display:block;font:400 .92rem/1.3 var(--display);padding:8px 2px 0;color:#f3e7d2;text-shadow:2px 2px 0 rgba(0,0,0,.5);overflow-wrap:anywhere}
+
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:50;background:rgba(5,7,9,.92);display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.lb figure{margin:0;display:grid;gap:12px;justify-items:center;max-width:min(560px,100%)}
+.lb img{max-height:74vh;max-width:100%;width:auto;box-shadow:0 0 0 6px #6b4a2c,0 0 0 9px #000}
+.lb figcaption{font:400 1.15rem/1.35 var(--display);text-align:center;text-shadow:2px 2px 0 #000}
+.lb figcaption small{display:block;font:400 .78rem/1.5 var(--mono);color:var(--muted);text-shadow:none}
+.lb-nav{display:flex;gap:12px;justify-content:center}
+
 @media (max-width:900px){
   .hero{grid-template-columns:minmax(0,1fr);gap:36px;padding-block:8px 48px}
   .inv-layout{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:480px){
-  .hs{width:44px;height:44px}
-  .hs img{width:26px;height:26px}
+  .hs{width:42px;height:42px}
+  .hs img{width:24px;height:24px}
+  .frames{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .frame{padding:6px}
+  .frame span{font-size:.82rem}
   .stats{padding:6px 16px}
   .inv,.chat{padding:14px}
   .top .hide-s{display:none}
@@ -188,11 +219,14 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
 
   <section class="hero" id="svet" aria-label="Úvod">
     <div>
-      <div class="eyebrow">Singleplayer · Praha</div>
+      <div class="player">
+        <div class="skin"><img src="img/avatar.jpg" alt="Martin Kristián Felcman" width="68" height="68"></div>
+        <div><div class="eyebrow">Singleplayer · Praha</div><small>Poslední save: Erasmus, Firenze 2025/26</small></div>
+      </div>
       <h1>Martin Kristián <span>Felcman</span></h1>
-      <p class="lede">Studuju <strong>Fakultu informatiky a statistiky na VŠE</strong> a pracuju v IT ve <strong>Seyforu</strong>. Ve volném čase jezdím s <strong>4FIS clubem</strong>, autem i letadlem.</p>
+      <p class="lede">Studuju <strong>Fakultu informatiky a statistiky na VŠE</strong> a pracuju v IT ve <strong>Seyforu</strong>. Semestr jsem strávil na Erasmu ve <strong>Florencii</strong> a ve volném čase jezdím s <strong>4FIS clubem</strong>, autem i letadlem.</p>
       <div class="actions">
-        <a class="btn primary" href="#inventar">Otevřít inventář</a>
+        <a class="btn primary" href="#mapy">Otevřít mapy</a>
         <a class="btn" href="https://www.instagram.com/mkfelcman/" target="_blank" rel="noopener">Instagram ↗</a>
       </div>
     </div>
@@ -224,7 +258,13 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
       <div class="stat"><span>Práce</span><b>Seyfor</b></div>
       <div class="stat"><span>Klub</span><b>4FIS club</b></div>
       <div class="stat"><span>Domovský svět</span><b>Praha</b></div>
-      <div class="stat"><span>Prozkoumané země</span><b>Česko, Itálie</b></div>
+      <div class="stat"><span>Prozkoumané země</span><b>Česko, Itálie a další</b></div>
+      <div class="stat"><span>Erasmus</span><b>Firenze, 2025/26</b></div>
+      <div class="stat"><span>Snědené pizzy (1. měsíc v Itálii)</span><b>16</b></div>
+      <div class="stat"><span>Vypité aperoly (1. měsíc)</span><b>25</b></div>
+      <div class="stat"><span>Snědené těstoviny (2. měsíc)</span><b>5 kg</b></div>
+      <div class="stat"><span>Shoty limoncella (2. měsíc)</span><b>20</b></div>
+      <div class="stat"><span>Najeto na sdíleném kole</span><b>275 km</b></div>
       <div class="stat"><span>Sledující na Instagramu</span><b>1 197</b></div>
       <div class="stat"><span>Sledované účty</span><b>906</b></div>
       <div class="stat"><span>Vytěžené bloky (tahle návštěva)</span><b class="g" id="mined">0</b></div>
@@ -250,6 +290,14 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
         </dl>
       </div>
     </div>
+  </section>
+
+  <section id="mapy">
+    <div class="sec-head">
+      <div><div class="k">Prozkoumané mapy</div><h2>Mapy</h2></div>
+      <p>Fotky z Instagramu i s původními popisky. Klikni na obraz a zvětší se.</p>
+    </div>
+    <div class="maps" id="maps"></div>
   </section>
 
   <section id="achievementy">
@@ -292,12 +340,24 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
     <a class="hs on" href="#svet" data-name="Svět"><kbd>1</kbd><img class="px" data-sprite="grass" alt=""><span class="sr">Svět</span></a>
     <a class="hs" href="#statistiky" data-name="Statistiky"><kbd>2</kbd><img class="px" data-sprite="orb" alt=""><span class="sr">Statistiky</span></a>
     <a class="hs" href="#inventar" data-name="Inventář"><kbd>3</kbd><img class="px" data-sprite="book" alt=""><span class="sr">Inventář</span></a>
-    <a class="hs" href="#achievementy" data-name="Achievementy"><kbd>4</kbd><img class="px" data-sprite="diamond" alt=""><span class="sr">Achievementy</span></a>
-    <a class="hs" href="#kontakt" data-name="Napiš mi"><kbd>5</kbd><img class="px" data-sprite="chat" alt=""><span class="sr">Kontakt</span></a>
+    <a class="hs" href="#mapy" data-name="Mapy"><kbd>4</kbd><img class="px" data-sprite="map" alt=""><span class="sr">Mapy</span></a>
+    <a class="hs" href="#achievementy" data-name="Achievementy"><kbd>5</kbd><img class="px" data-sprite="diamond" alt=""><span class="sr">Achievementy</span></a>
+    <a class="hs" href="#kontakt" data-name="Napiš mi"><kbd>6</kbd><img class="px" data-sprite="chat" alt=""><span class="sr">Kontakt</span></a>
   </div>
 </nav>
 
 <div class="tip" id="tip" hidden></div>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Fotka" hidden>
+  <figure>
+    <img id="lbimg" alt="">
+    <figcaption id="lbcap"></figcaption>
+    <div class="lb-nav">
+      <button class="btn ghost" id="lbprev" type="button">← Předchozí</button>
+      <button class="btn ghost" id="lbclose" type="button">Zavřít</button>
+      <button class="btn ghost" id="lbnext" type="button">Další →</button>
+    </div>
+  </figure>
+</div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
@@ -315,7 +375,9 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
     beer:{pal:{w:'#f4f1e6',y:'#d99a1e',Y:'#f2c64b',h:'#a9b0b6',g:'#c9d2d6'},rows:['.wwwww..','.wwwwwh.','.yyyyyhh','.yYyyy.h','.yyyYy.h','.yyyyyhh','.yYyyy..','.ggggg..']},
     map:{pal:{p:'#d8c99a',g:'#6aa83e',b:'#3f76c9',r:'#d23a2a'},rows:['pppppppp','pggbbggp','pgrgbbgp','pggbgggp','pgbbgggp','pbbggggp','pggggbbp','pppppppp']},
     log:{pal:{l:'#6b5133',L:'#4e3a22',t:'#9c7c4f'},rows:['ttttttt.','lLllLllL','lLllLllL','llLlllLl','lLllLllL','llLlllLl','lLllLllL','llLlllLl']},
-    house:{pal:{r:'#8a3b25',s:'#9a9d9f',w:'#e7d9a8',d:'#5a3a22',k:'#5c6063'},rows:['...rr...','..rrrr..','.rrrrrr.','rrrrrrrr','.ssssss.','.swsdss.','.sssdss.','.kkkkkk.']}
+    house:{pal:{r:'#8a3b25',s:'#9a9d9f',w:'#e7d9a8',d:'#5a3a22',k:'#5c6063'},rows:['...rr...','..rrrr..','.rrrrrr.','rrrrrrrr','.ssssss.','.swsdss.','.sssdss.','.kkkkkk.']},
+    egg:{pal:{k:'#120a1c',p:'#3a1f5c',P:'#6b3fa0'},rows:['...kk...','..kppk..','.kpPppk.','.kpppPk.','kpPpppPk','kppppppk','.kpPppk.','..kkkk..']},
+    pizza:{pal:{c:'#d9a04a',y:'#f2d36b',r:'#c8382a',g:'#5a9a3a'},rows:['cccccccc','.cyyryyc','..cyygyc','..cyryy.','...cyyc.','...cyc..','....cc..','........']}
   };
   const spriteCache = {};
   const sprite = k => {
@@ -385,7 +447,9 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
     {id:'gympl', s:'book', t:'Nejtěžší gympl', d:'Přijat na Fakultu informatiky a statistiky VŠE. Adresa <a href="https://www.nejtezsigympl.cz" target="_blank" rel="noopener">nejtezsigympl.cz</a> vede přímo na vse.cz.', on:true},
     {id:'hello', s:'monitor', t:'Hello, world', d:'Nastoupil do IT ve Seyforu.', on:true},
     {id:'cheers', s:'beer', t:'Na zdraví', d:'Člen 4FIS clubu.', on:true},
-    {id:'ciao', s:'map', t:'Ciao, Firenze', d:'Prozkoumal Florencii.', on:true},
+    {id:'ciao', s:'map', t:'Ciao, Firenze', d:'Semestr na Erasmu ve Florencii, 2025/26. Cestou Pisa, Miláno, Fiesole a Cinque Terre.', on:true},
+    {id:'dragon', s:'egg', t:'Free the End', d:'Brněnský ender dragon dostal bídu. Roadtrip, léto 2025.', on:true},
+    {id:'pizza', s:'pizza', t:'Pasta la vista', d:'16 pizz, 25 aperolů a 5 kg těstovin během dvou měsíců v Itálii.', on:true},
     {id:'mp', s:'orb', t:'Multiplayer', d:'Tenhle svět sleduje 1 197 lidí.', on:true},
     {id:'wood', s:'log', t:'Kde je dřevo?', d:'Vytěž kmen stromu na ostrově nahoře.', on:false},
     {id:'dia', s:'diamond', t:'Diamanty!', d:'Najdi diamant schovaný v ostrově.', on:false}
@@ -412,6 +476,66 @@ footer{padding-block:40px 20px;font:400 .8rem/1.6 var(--mono);color:var(--muted)
     el.querySelector('.st').textContent = 'Získáno';
     toast(a.s, a.t);
   };
+
+  /* ---------- maps: photo galleries ---------- */
+  const MAPS = [
+    {t:'Roadtrip', d:'Léto 2025 · Česko', s:'grass', p:[
+      ['p1-01','„Hele, to by bylo hezký na fotku“'],
+      ['p1-02','„Steven, vyfotíš mě, jak držím to slunce“'],
+      ['p1-03','Brněnský ender dragon dostal bídu'],
+      ['p1-04','Můj cihlovej haus'],
+      ['p1-05','Došly mi tyčky na žebřík'],
+      ['p1-10','Je toto nether portál???!'],
+      ['p1-11','Poprosím jedno kafe Gamba']
+    ]},
+    {t:'Erasmus: Firenze', d:'2025/26 · Itálie', s:'map', p:[
+      ['p4-03','This is what we came for'],
+      ['p4-02','Hej čum na ten výhled'],
+      ['p2-01','Your camera has a black and white filter?'],
+      ['p4-10','Rozpažit, rozkročit, nadechnout'],
+      ['p3-04','Kus chlapa potřebuje kus masa'],
+      ['p3-05','Frajerské foto n. 1'],
+      ['p3-06','Frajerské foto n. 2'],
+      ['p3-01','Is it really?'],
+      ['p4-01','I AM THE BEACH'],
+      ['p2-12','DA VINKI??!!!'],
+      ['p2-03','Stoupání 8 %, motivace 0 %'],
+      ['p4-12','October beach vibes']
+    ]},
+    {t:'Další světy', d:'2023', s:'house', p:[
+      ['p7-01','My fav person in this world'],
+      ['p8-01','Pohodinda to byla'],
+      ['p8-07','Pohodinda to byla, část 2']
+    ]}
+  ];
+  const flat = [];
+  const mapsEl = document.getElementById('maps');
+  mapsEl.innerHTML = MAPS.map(m => `<div>
+      <div class="map-head"><div class="slot"><img class="px" data-sprite="${m.s}" alt=""></div>
+        <div><h3>${m.t}</h3><p>${m.d} · ${m.p.length} fotek</p></div></div>
+      <div class="frames">${m.p.map(([f, c]) => { const i = flat.push({f, c, m:m.t + ' · ' + m.d}) - 1;
+        return `<button class="frame" type="button" data-i="${i}"><img src="img/${f}.jpg" alt="${c}" loading="lazy" width="720" height="900"><span>${c}</span></button>`; }).join('')}</div>
+    </div>`).join('');
+  paintSprites(mapsEl);
+
+  const lb = document.getElementById('lb'), lbimg = document.getElementById('lbimg'), lbcap = document.getElementById('lbcap');
+  let cur = 0, lastFocus = null;
+  const show = i => { cur = (i + flat.length) % flat.length; const p = flat[cur];
+    lbimg.src = `img/${p.f}.jpg`; lbimg.alt = p.c; lbcap.innerHTML = `${p.c}<small>${p.m} · ${cur + 1} / ${flat.length}</small>`; };
+  const openLb = i => { lastFocus = document.activeElement; show(i); lb.hidden = false; document.getElementById('lbclose').focus(); };
+  const closeLb = () => { lb.hidden = true; lastFocus?.focus?.(); };
+  mapsEl.addEventListener('click', e => { const b = e.target.closest('.frame'); if (b) openLb(+b.dataset.i); });
+  document.getElementById('lbprev').addEventListener('click', () => show(cur - 1));
+  document.getElementById('lbnext').addEventListener('click', () => show(cur + 1));
+  document.getElementById('lbclose').addEventListener('click', closeLb);
+  lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+  addEventListener('keydown', e => {
+    if (lb.hidden) return;
+    e.stopImmediatePropagation();
+    if (e.key === 'Escape') closeLb();
+    if (e.key === 'ArrowLeft') show(cur - 1);
+    if (e.key === 'ArrowRight') show(cur + 1);
+  }, true);
 
   /* ---------- HUD: hotbar + XP ---------- */
   const slots = [...document.querySelectorAll('.hs')];
